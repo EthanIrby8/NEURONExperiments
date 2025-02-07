@@ -68,7 +68,7 @@ class SynapticNeuron:
                 seg.pas.g = 0.001 # Passive conductance (how far the membrane potential is driven by the input current)
                 seg.pas.e = -65 * self.mV # Reversal potential - the membrane potential where the direction of the current reverses
             
-            self.syn = ExponentialSynapse(self, soma_flag=False)
+            self.syn = ExponentialSynapse(self, soma_synapse=False)
             self.syn.synapse.tau = 2
             
         if self.hodgkin_huxley:
@@ -111,9 +111,9 @@ class SynapticNeuron:
 
 
 class ExponentialSynapse:
-    def __init__(self, neuron: SynapticNeuron, soma_flag: bool, position: float = 0.5, tau: float = 2.0, 
+    def __init__(self, neuron: SynapticNeuron, soma_synapse: bool, position: float = 0.5, tau: float = 2.0, 
                 reversal_potential: float = 0.0):
-        if soma_flag:
+        if soma_synapse:
             self.synapse = h.ExpSyn(neuron.soma(position))
         else:
             self.synapse = h.ExpSyn(neuron.dendrites(position))

@@ -42,7 +42,6 @@ class D2Receptor:
 
         self.exponential_synapse = exponential_synapse
         self.nspike = 0
-        self.on = False
         self.synon = 0
         # variables for synaptic conductance
         self.Ron = 0 
@@ -86,15 +85,22 @@ class D2Receptor:
         self.TDA_prev = self.TDA 
         self.V_rest_prev = self.V_rest
         self.G_prev = self.G
+        return self.D2AR_prev, self.DAex_prev, self.TDA_prev, self.V_rest_prev, self.G_prev
 
     def step(self, weight: float, dt: float):
         beta = 0.18
         # turn on multi-order time step integration within NEURON 
         cvode = h.CVode()
         cvode.active(1)
+        # record D2 receptor dynamics 
+        self.d2AR_list = []
+        self.daEX_list = []
+        self.V_list = []
+        self.TDA_list = []
+        self.G_list = []
 
         self.nspike += 1
-        # if not self.on:
+
         self.r0 = np.exp(-beta * (dt - self.t0))
         self.t0 = dt
         self.Ron += self.r0
@@ -104,18 +110,18 @@ class D2Receptor:
         self.V_rest += self.dVOdt() * dt 
         self.TDA += self.dTDAdt() * dt 
         self.G += self.dGdt() * dt
-        self.set_state_variables()
-        self.on = True
+        D2AR_prev, DAex_prev, TDA_prev, V_rest_prev, G_prev = self.set_state_variables()
+        self.d2AR_list.extend(D2AR_prev)
+        self.daEX_list.extend(DAex_prev)
+        self.V_list.extend(V_rest_prev)
+        self.TDA_list.extend(TDA_prev)
+        self.G_list.extend(G_prev)
         self.synon += weight
 
-        # logger.info(f"D2AR: {self.D2AR}")
-        # logger.info(f"TDA: {self.TDA}")
-        # logger.info(f"DAex: {self.DAex}")
-        # logger.info(f"V_rest: {self.V_rest}")
-        logger.info(f"G-protein activation: {self.G}")
+        logger.info(f"G-protein activation history: {G_list}")
 
         if self.G > self.G_protein_threshold: 
-            logger.info(f"Hyperpolarizing receptor/synapse..")
+            logger.info(f"Hyperpolarizing receptor..")
             self.exponential_synapse.synapse.e = -100.0
             logger.info(f"Synapse reversal potential: {self.exponential_synapse.synapse.e}")
 
@@ -123,6 +129,8 @@ class D2Receptor:
 
         # set synapse conductance (number of channels opened and state of current conducted) to updated weight
         self.exponential_synapse.synapse.g = self.synon * (self.Ron + self.Roff)
+
+        return self.d2AR_list, self.daEX_list, self.V_list, self.TDA_list, self.G_list
 
     def deactivate(self, flag: int, weight: float, t: float):
         Rinf = 0.94 / (0.94 + 0.18)
@@ -134,4 +142,3 @@ class D2Receptor:
             self.synon -= weight
             self.Ron -= self.r0
             self.Roff += self.r0
-            self.on = False

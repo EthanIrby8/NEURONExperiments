@@ -1,0 +1,40 @@
+./GABA_A_Channel.c: ../GABA_A_Channel.mod
+	@printf " -> $(C_GREEN)NMODL$(C_RESET) $<\\n"
+	(cd "..";  MODLUNIT=$(NRNUNITS) $(NOCMODL) "GABA_A_Channel.mod" -o "/Users/Ethan/Documents/Documents/GithubRepos/NEURONExperiments/NMODL/arm64")
+
+./GABA_A_Channel.o: ./GABA_A_Channel.c
+	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\\n"
+	$(COMPILE) -I".." $(INCLUDES) -fPIC -c $< -o $@
+
+./GenericLigand.c: ../GenericLigand.mod
+	@printf " -> $(C_GREEN)NMODL$(C_RESET) $<\\n"
+	(cd "..";  MODLUNIT=$(NRNUNITS) $(NOCMODL) "GenericLigand.mod" -o "/Users/Ethan/Documents/Documents/GithubRepos/NEURONExperiments/NMODL/arm64")
+
+./GenericLigand.o: ./GenericLigand.c
+	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\\n"
+	$(COMPILE) -I".." $(INCLUDES) -fPIC -c $< -o $@
+
+./NMDA16_2.c: ../NMDA16_2.mod
+	@printf " -> $(C_GREEN)NMODL$(C_RESET) $<\\n"
+	(cd "..";  MODLUNIT=$(NRNUNITS) $(NOCMODL) "NMDA16_2.mod" -o "/Users/Ethan/Documents/Documents/GithubRepos/NEURONExperiments/NMODL/arm64")
+
+./NMDA16_2.o: ./NMDA16_2.c
+	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\\n"
+	$(COMPILE) -I".." $(INCLUDES) -fPIC -c $< -o $@
+
+./NMDA_Channel_Calcium.c: ../NMDA_Channel_Calcium.mod
+	@printf " -> $(C_GREEN)NMODL$(C_RESET) $<\\n"
+	(cd "..";  MODLUNIT=$(NRNUNITS) $(NOCMODL) "NMDA_Channel_Calcium.mod" -o "/Users/Ethan/Documents/Documents/GithubRepos/NEURONExperiments/NMODL/arm64")
+
+./NMDA_Channel_Calcium.o: ./NMDA_Channel_Calcium.c
+	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\\n"
+	$(COMPILE) -I".." $(INCLUDES) -fPIC -c $< -o $@
+
+./SynNoise.c: ../SynNoise.mod
+	@printf " -> $(C_GREEN)NMODL$(C_RESET) $<\\n"
+	(cd "..";  MODLUNIT=$(NRNUNITS) $(NOCMODL) "SynNoise.mod" -o "/Users/Ethan/Documents/Documents/GithubRepos/NEURONExperiments/NMODL/arm64")
+
+./SynNoise.o: ./SynNoise.c
+	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\\n"
+	$(COMPILE) -I".." $(INCLUDES) -fPIC -c $< -o $@
+
