@@ -1,8 +1,14 @@
 NEURON {
+  THREADSAFE
   POINT_PROCESS SynNoise
-  RANGE i,del,dur,f0,f1,r,torn,std,bias
+  RANGE i,del,dur,f0,f1,r,torn,std,bias, noise
   ELECTRODE_CURRENT i
 }
+
+VERBATIM
+extern void set_seed(double);
+extern double normrand(double, double);
+ENDVERBATIM
 
 UNITS {
   (nA) = (nanoamp)
@@ -27,6 +33,18 @@ ASSIGNED {
   on (1)
 }
 
+PROCEDURE set_noise_seed(x) {
+  LOCAL lset_seed  
+  lset_seed = x
+  VERBATIM
+  set_seed(_llset_seed);
+  ENDVERBATIM
+}
+
+FUNCTION my_normrand(mean, std) {
+    my_normrand = normrand(mean, std)
+}
+
 INITIAL {
   i = 0
   on = 0
@@ -39,7 +57,7 @@ PROCEDURE seed(x) {
 
 BEFORE BREAKPOINT {
   if  (on) {
-    noise = normrand(0,std*1(/nA))*1(nA)
+    noise = my_normrand(0,std*1(/nA))*1(nA)
     amp = f0 + 0.5*(f1-f0)*(tanh((t-torn)/(r/3)/(1(ms))-3)+1)
     ival = amp + noise + bias
   } else {

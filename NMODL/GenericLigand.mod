@@ -1,9 +1,9 @@
 TITLE Modular Ligand Class Supporting External Input
 
 NEURON {
+    THREADSAFE
     POINT_PROCESS GenericLigand
-    RANGE C, C_init, decay_rate, external_input
-    POINTER receptor_activation
+    RANGE C_init, decay_rate, external_input, C, receptor_activation
 }
 
 PARAMETER {
@@ -12,16 +12,16 @@ PARAMETER {
     external_input = 0 (uM/ms): Continuous environmental input (volume transmission)
 }
 
-ASSIGNED {
-    receptor_activation (1)
-}
-
 STATE {
     C (uM)                    : Ligand concentration (dynamic)
 }
 
 INITIAL {
     C = C_init                : Initialize C to its starting value
+}
+
+ASSIGNED {
+    receptor_activation (1)
 }
 
 BREAKPOINT {

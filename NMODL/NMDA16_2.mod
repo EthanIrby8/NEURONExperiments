@@ -48,14 +48,14 @@ ENDCOMMENT
 INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}
 
 NEURON {
+	THREADSAFE
 	POINT_PROCESS NMDA16_2
 	USEION na READ nao
-	RANGE T_max, T, tau, tRel, Erev, synon
+	RANGE T_max, tau, tRel, Erev, T, synon 
 	RANGE R,RA,RA2,RA2d1,RA2d2,RA2f,RA2s,O,OMg,RMg,RAMg,RA2Mg,RA2d1Mg,RA2d2Mg,RA2fMg,RA2sMg
 	RANGE g, kd1F, kd1B, kd2F, kd2B, csi
 	GLOBAL Kcs, kP, kNo, kNi, kMgF, kMgB, ksF,	ksB, kfF, kfB
 	NONSPECIFIC_CURRENT i
-	THREADSAFE
 }
 
 UNITS {
@@ -116,7 +116,7 @@ ASSIGNED {
 	tRel	(ms)	: spiking time of the presynaptic cell
 	synon			: turns the synapse on or Off
 	w				: weight of synapse
-	
+
 	: voltage-dependnent rates
 	ksF		(/ms)
 	ksB		(/ms)

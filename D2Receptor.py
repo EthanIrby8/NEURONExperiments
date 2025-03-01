@@ -1,6 +1,7 @@
 from neuron import h
 import numpy as np 
 import logging
+from tqdm import tqdm 
 from utils import ExponentialSynapse 
 logger = logging.getLogger("Logging for D2 Receptor")
 FORMAT = '%(asctime)s %(message)s'
@@ -49,6 +50,18 @@ class D2Receptor:
         self.r0 = 0
         self.t0 = 0
 
+        # turn on multi-order time step integration within NEURON 
+        self.cvode = h.CVode()
+        self.cvode.active(1)
+
+        # record D2 receptor dynamics 
+        self.d2AR_list = []
+        self.daEX_list = []
+        self.V_list = []
+        self.TDA_list = []
+        self.G_list = []
+
+
     def dD2ARdt(self):
         '''update concentration of activated pre-synaptic D2 receptors'''
         a_unbinding_rate = 1.7
@@ -87,18 +100,9 @@ class D2Receptor:
         self.G_prev = self.G
         return self.D2AR_prev, self.DAex_prev, self.TDA_prev, self.V_rest_prev, self.G_prev
 
-    def step(self, weight: float, dt: float):
+    def step(self, weight: float, dt: float, total_sim_time: int):
         beta = 0.18
-        # turn on multi-order time step integration within NEURON 
-        cvode = h.CVode()
-        cvode.active(1)
-        # record D2 receptor dynamics 
-        self.d2AR_list = []
-        self.daEX_list = []
-        self.V_list = []
-        self.TDA_list = []
-        self.G_list = []
-
+    
         self.nspike += 1
 
         self.r0 = np.exp(-beta * (dt - self.t0))
@@ -110,27 +114,28 @@ class D2Receptor:
         self.V_rest += self.dVOdt() * dt 
         self.TDA += self.dTDAdt() * dt 
         self.G += self.dGdt() * dt
-        D2AR_prev, DAex_prev, TDA_prev, V_rest_prev, G_prev = self.set_state_variables()
-        self.d2AR_list.extend(D2AR_prev)
-        self.daEX_list.extend(DAex_prev)
-        self.V_list.extend(V_rest_prev)
-        self.TDA_list.extend(TDA_prev)
-        self.G_list.extend(G_prev)
-        self.synon += weight
-
-        logger.info(f"G-protein activation history: {G_list}")
-
         if self.G > self.G_protein_threshold: 
             logger.info(f"Hyperpolarizing receptor..")
             self.exponential_synapse.synapse.e = -100.0
             logger.info(f"Synapse reversal potential: {self.exponential_synapse.synapse.e}")
-
-        cvode.event(dt + 0.3, lambda: self.deactivate(self.nspike, self.synon, dt))
-
+        D2AR_prev, DAex_prev, TDA_prev, V_rest_prev, G_prev = self.set_state_variables()
+        self.d2AR_list.append(D2AR_prev)
+        self.daEX_list.append(DAex_prev)
+        self.V_list.append(V_rest_prev)
+        self.TDA_list.append(TDA_prev)
+        self.G_list.append(G_prev)
+        self.synon += weight
         # set synapse conductance (number of channels opened and state of current conducted) to updated weight
         self.exponential_synapse.synapse.g = self.synon * (self.Ron + self.Roff)
 
+        if dt < total_sim_time:
+            self.cvode.event(dt + 0.3, lambda: self.step(weight, dt + 0.3, total_sim_time))
+
+        # logger.info(f"G-protein activation hist: {self.G_list}")
+        # logger.info(f"DA extracellular concentration hist: {self.daEX_list}")
+
         return self.d2AR_list, self.daEX_list, self.V_list, self.TDA_list, self.G_list
+
 
     def deactivate(self, flag: int, weight: float, t: float):
         Rinf = 0.94 / (0.94 + 0.18)

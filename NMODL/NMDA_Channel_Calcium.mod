@@ -1,10 +1,10 @@
 TITLE NMDA Receptor with Calcium Dynamics
 
 NEURON {
+    THREADSAFE
     POINT_PROCESS NMDA_Channel_Calcium
     NONSPECIFIC_CURRENT i
-    RANGE gmax, e, mgblock, mg, alpha_mg, beta_mg, depth, taur, local_cai
-    POINTER receptor_activation
+    RANGE gmax, e, mgblock, mg, alpha_mg, beta_mg, depth, taur, local_cai, receptor_activation
 }
 
 CONSTANT {
@@ -33,6 +33,7 @@ ASSIGNED {
 STATE {
     local_cai (mM)           : Localized calcium concentration
 }
+
 
 BREAKPOINT {
     SOLVE state METHOD cnexp

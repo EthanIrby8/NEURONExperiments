@@ -6,10 +6,10 @@ A simple GABA_A receptor mechanism that:
 ENDCOMMENT
 
 NEURON {
+    THREADSAFE
     POINT_PROCESS GABA_A_Channel
     USEION cl WRITE icl VALENCE -1  : Define chloride as a negatively charged ion
-    RANGE gmax, ecl
-    POINTER receptor_activation
+    RANGE gmax, ecl, receptor_activation
 }
 
 PARAMETER {
@@ -17,14 +17,10 @@ PARAMETER {
     ecl  = -70 (mV)    : Reversal potential for chloride
 }
 
-INITIAL {
-    receptor_activation = 1
-}
-
 ASSIGNED {
     v      (mV)        : Membrane potential
-    receptor_activation (1)
     icl    (nA)        : Chloride current
+    receptor_activation (1)
 }
 
 BREAKPOINT {
