@@ -131,9 +131,6 @@ class D2Receptor:
         if dt < total_sim_time:
             self.cvode.event(dt + 0.3, lambda: self.step(weight, dt + 0.3, total_sim_time))
 
-        # logger.info(f"G-protein activation hist: {self.G_list}")
-        # logger.info(f"DA extracellular concentration hist: {self.daEX_list}")
-
         return self.d2AR_list, self.daEX_list, self.V_list, self.TDA_list, self.G_list
 
 
