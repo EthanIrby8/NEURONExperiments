@@ -1,7 +1,6 @@
 from neuron import h
 import numpy as np 
 import logging
-from tqdm import tqdm 
 from utils import ExponentialSynapse 
 logger = logging.getLogger("Logging for D2 Receptor")
 FORMAT = '%(asctime)s %(message)s'
@@ -12,12 +11,13 @@ logger.setLevel(logging.INFO)
 
 
 class D2Receptor:
-    def __init__(self, exponential_synapse: ExponentialSynapse, resting_membrane_potential: float, G_protein_threshold: float,
+    def __init__(self, dopamine_ligand: None, exponential_synapse: ExponentialSynapse, resting_membrane_potential: float, G_protein_threshold: float,
                 tau: float = 0.15, k: float = 10.46, c: float = 3.62, a: float = 0.09, 
                 b: float = 0.012, kV: float = 2.73 * 3600):
         '''models the dynamics of the D2 autoreceptors in the Striatum
         triggers a G-protein cascade effect that decreases dopamine release
         D2AR is a state variable updated at each time step'''
+        self.dopamine_ligand = dopamine_ligand
         self.D2AR_prev = 0.0
         self.D2AR = 0.0 # OCCUPIED number of dopamine autoreceptors 
         self.D2AR_total = 0.1 # TOTAL number of dopamine autoreceptors -> fraction 
@@ -109,15 +109,23 @@ class D2Receptor:
         self.t0 = dt
         self.Ron += self.r0
         self.Roff -= self.r0
+        # Set the dopamine extracellular concentration to that of the ligand 
+        if self.dopamine_ligand is not None:
+            self.DAex = self.dopamine_ligand.C
+        else:
+            self.DAex += self.dDAexdt() * dt 
         self.D2AR += self.dD2ARdt() * dt
-        self.DAex += self.dDAexdt() * dt 
         self.V_rest += self.dVOdt() * dt 
         self.TDA += self.dTDAdt() * dt 
         self.G += self.dGdt() * dt
         if self.G > self.G_protein_threshold: 
             logger.info(f"Hyperpolarizing receptor..")
-            self.exponential_synapse.synapse.e = -100.0
+            graded_hyperpolarization = -70.0 - (self.G - self.G_protein_threshold) * 2.0
+            self.exponential_synapse.synapse.e = max(graded_hyperpolarization, -100.0)
             logger.info(f"Synapse reversal potential: {self.exponential_synapse.synapse.e}")
+        else:
+            logger.info("Setting reversal potential to 0")
+            self.exponential_synapse.synapse.e = 0.0
         D2AR_prev, DAex_prev, TDA_prev, V_rest_prev, G_prev = self.set_state_variables()
         self.d2AR_list.append(D2AR_prev)
         self.daEX_list.append(DAex_prev)
