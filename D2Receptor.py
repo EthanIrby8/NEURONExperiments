@@ -8,7 +8,9 @@ logging.basicConfig(format=FORMAT)
 logger.setLevel(logging.INFO)
 
 
-
+# turn on multi-order time step integration within NEURON 
+cvode = h.CVode()
+cvode.active(1)
 
 class D2Receptor:
     def __init__(self, dopamine_ligand: None, exponential_synapse: ExponentialSynapse, resting_membrane_potential: float, G_protein_threshold: float,
@@ -50,9 +52,7 @@ class D2Receptor:
         self.r0 = 0
         self.t0 = 0
 
-        # turn on multi-order time step integration within NEURON 
-        self.cvode = h.CVode()
-        self.cvode.active(1)
+        self.cvode = cvode
 
         # record D2 receptor dynamics 
         self.d2AR_list = []
@@ -60,6 +60,7 @@ class D2Receptor:
         self.V_list = []
         self.TDA_list = []
         self.G_list = []
+        logger.info("Initialized D2 Receptor.")
 
 
     def dD2ARdt(self):
@@ -112,6 +113,7 @@ class D2Receptor:
         # Set the dopamine extracellular concentration to that of the ligand 
         if self.dopamine_ligand is not None:
             self.DAex = self.dopamine_ligand.C
+            logger.info(f"Dopamine extracellular concentration: {self.DAex}")
         else:
             self.DAex += self.dDAexdt() * dt 
         self.D2AR += self.dD2ARdt() * dt
@@ -124,7 +126,7 @@ class D2Receptor:
             self.exponential_synapse.synapse.e = max(graded_hyperpolarization, -100.0)
             logger.info(f"Synapse reversal potential: {self.exponential_synapse.synapse.e}")
         else:
-            logger.info("Setting reversal potential to 0")
+            logger.info(f"G: {self.G}")
             self.exponential_synapse.synapse.e = 0.0
         D2AR_prev, DAex_prev, TDA_prev, V_rest_prev, G_prev = self.set_state_variables()
         self.d2AR_list.append(D2AR_prev)
