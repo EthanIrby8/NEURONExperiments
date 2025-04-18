@@ -112,11 +112,12 @@ class D2Receptor:
         self.Roff -= self.r0
         # Set the dopamine extracellular concentration to that of the ligand 
         if self.dopamine_ligand is not None:
-            self.DAex = self.dopamine_ligand.C
-            logger.info(f"Dopamine extracellular concentration: {self.DAex}")
+            self.DAex += self.dopamine_ligand.C
+            logger.info(f"DA concentration: {self.DAex}")
         else:
             self.DAex += self.dDAexdt() * dt 
         self.D2AR += self.dD2ARdt() * dt
+        logger.info(f"D2AR: {self.D2AR}")
         self.V_rest += self.dVOdt() * dt 
         self.TDA += self.dTDAdt() * dt 
         self.G += self.dGdt() * dt
@@ -127,7 +128,7 @@ class D2Receptor:
             logger.info(f"Synapse reversal potential: {self.exponential_synapse.synapse.e}")
         else:
             logger.info(f"G: {self.G}")
-            self.exponential_synapse.synapse.e = 0.0
+            # self.exponential_synapse.synapse.e = 0.0
         D2AR_prev, DAex_prev, TDA_prev, V_rest_prev, G_prev = self.set_state_variables()
         self.d2AR_list.append(D2AR_prev)
         self.daEX_list.append(DAex_prev)
