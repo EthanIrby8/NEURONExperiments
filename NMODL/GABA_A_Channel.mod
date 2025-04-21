@@ -9,7 +9,8 @@ NEURON {
     THREADSAFE
     POINT_PROCESS GABA_A_Channel
     USEION cl WRITE icl VALENCE -1  : Define chloride as a negatively charged ion
-    RANGE gmax, ecl, receptor_activation
+    RANGE gmax, ecl
+    POINTER receptor_activation
 }
 
 PARAMETER {

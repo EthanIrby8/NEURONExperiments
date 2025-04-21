@@ -80,13 +80,17 @@ class D2Receptor:
         delta_T = 1.8
         return 1 + (delta_T - 1 / 1 + np.exp(kT * (self.D2AR_prev - DO))) - self.TDA_prev
  
-    def dDAexdt(self):
+    def dDAexdt(self, input_current):
         '''update concentration of extracellular dopamine'''
         F = self.Fmax / (1 + np.exp((self.theta - self.V_rest_prev) / self.sigmoid))
         kVmax = 2.63 * 3600
         kM = 0.2 # affinity of dopamine to dopamine transporter and exhibits minimal spatiotemporal variation 
         beta = 144.0
-        return self.a * F - (kVmax * self.TDA_prev / kM + self.DAex_prev) * self.DAex_prev - beta * self.DAex_prev
+        # instantaneous equation
+        # return (self.a * F) - (beta * kM) - (kVmax * self.TDA_prev) + np.sqrt(((self.a * F) - (beta * kM) - (kVmax * self.TDA_prev))**2 + (4*beta*self.a*F) * kM) 
+        # GENERICLIGAND CONCENTRATION DYNAMICS EQUATION
+        return -self.DAex_prev * 0.01 + input_current
+        # return self.a * F - (kVmax * self.TDA_prev / kM + self.DAex_prev) * self.DAex_prev - beta * self.DAex_prev
 
     def dGdt(self):
         # activation rate of G-proteins as a function of amount of extracellular dopamine 
@@ -101,7 +105,7 @@ class D2Receptor:
         self.G_prev = self.G
         return self.D2AR_prev, self.DAex_prev, self.TDA_prev, self.V_rest_prev, self.G_prev
 
-    def step(self, weight: float, dt: float, total_sim_time: int):
+    def step(self, weight: float, dt: float, total_sim_time: int, input_current):
         beta = 0.18
     
         self.nspike += 1
@@ -115,8 +119,11 @@ class D2Receptor:
             self.DAex += self.dopamine_ligand.C
             logger.info(f"DA concentration: {self.DAex}")
         else:
-            self.DAex += self.dDAexdt() * dt 
+            self.DAex += self.dDAexdt(input_current) * dt 
+            logger.info(f"DA concentration: {self.DAex}")
+        self.DAex = 120.0 if self.DAex > 120.0 else self.DAex
         self.D2AR += self.dD2ARdt() * dt
+        self.D2AR = 37.6 if self.D2AR > 37.6 else self.D2AR
         logger.info(f"D2AR: {self.D2AR}")
         self.V_rest += self.dVOdt() * dt 
         self.TDA += self.dTDAdt() * dt 
@@ -125,7 +132,6 @@ class D2Receptor:
             logger.info(f"Hyperpolarizing receptor..")
             graded_hyperpolarization = -70.0 - (self.G - self.G_protein_threshold) * 2.0
             self.exponential_synapse.synapse.e = max(graded_hyperpolarization, -100.0)
-            logger.info(f"Synapse reversal potential: {self.exponential_synapse.synapse.e}")
         else:
             logger.info(f"G: {self.G}")
             # self.exponential_synapse.synapse.e = 0.0

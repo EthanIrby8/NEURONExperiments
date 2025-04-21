@@ -4,7 +4,8 @@ NEURON {
     THREADSAFE
     POINT_PROCESS NMDA_Channel_Calcium
     NONSPECIFIC_CURRENT i
-    RANGE gmax, e, mgblock, mg, alpha_mg, beta_mg, depth, taur, local_cai, receptor_activation
+    RANGE gmax, e, mgblock, mg, alpha_mg, beta_mg, depth, taur, local_cai
+    POINTER receptor_activation
 }
 
 CONSTANT {
