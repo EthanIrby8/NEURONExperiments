@@ -74,17 +74,18 @@ class SynapticNeuron:
         if self.hodgkin_huxley:
             self.mV = 0.02
             self.build_hh(self.mV)
-
+        
         for sec in self.soma.wholetree():
             sec.Ra = 100  # Axial resistance in Ohm * cm
             sec.cm = 1
         
     def build_hh(self, mV):
         self.soma.insert("hh")
+        # TODO: pass segment arguments to constructor 
         for segment in self.soma:
             segment.hh.gnabar = 0.12 # sodium conductance
             segment.hh.gkbar = 0.036 # potassium conductance
-            segment.hh.gl = 0.003 # leak conductance
+            segment.hh.gl = 0.0003 # leak conductance
             segment.hh.el = -54.3 * mV # reversal potential -> TODO: MODULATE
 
     def __repr__(self):
