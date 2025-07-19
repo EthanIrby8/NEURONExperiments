@@ -267,7 +267,7 @@ class NeuronSimulation:
         h.finitialize(RESTING_MEMBRANE_POTENTIAL)
         h.continuerun(TOTAL_EXP_TIME)
         logger.info("Ran simulation")
-        return dopamine_concentration
+        return dopamine_concentration, time_vector
 
 
 sim = NeuronSimulation(glutamate_first_spike_time=500.0, dopamine_first_spike_time=600.0, glutamate_iclamp_amp=0.8, 
@@ -284,15 +284,15 @@ plt.tight_layout()
 plt.show()
 
 plt.figure(figsize=(12, 6))
-        plt.plot(
-            time_vector,
-            dopamine_concentration,
-            label="Dopamine concentration in the Dorsal Striatum",
-        )
-        plt.xlabel("Time (ms)")
-        plt.ylabel("Concentration (uM)")
-        plt.legend()
-        plt.grid(True)
-        plt.tight_layout()
-        plt.show()
+plt.plot(
+    time_vector,
+    dopamine_concentration,
+    label="Dopamine concentration in the Dorsal Striatum",
+)
+plt.xlabel("Time (ms)")
+plt.ylabel("Concentration (uM)")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
 '''

@@ -31,9 +31,8 @@ async def send_concentration_data(sid):
         sim = NeuronSimulation(glutamate_first_spike_time=glutamate_spike_dur, dopamine_first_spike_time=600.0, glutamate_iclamp_amp=0.8, 
                         dopamine_iclamp_amp=dop_iclamp_amp, glutamate_iclamp_delay=8, dopamine_iclamp_delay=4, 
                         glutamate_spike_thresh=-33.0, dopamine_spike_thresh=-33.0, dopamine_decay_rate=dop_decay_rate)
-        dop_conc = sim.run_simulation()
+        dop_conc, _ = sim.run_simulation()
         dopamine_concentrations.append(dop_conc)
-    # for dopamine_concentration in tqdm(dopamine_concentrations):
     sim_dop_conc = list(dopamine_concentrations[2])
     for timestep_dc in sim_dop_conc:
         timestep_dc = round(timestep_dc, 5)
