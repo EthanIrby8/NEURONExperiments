@@ -30,23 +30,10 @@ class NeuronSimulation:
         self.dopamine_decay_rate = dopamine_decay_rate
 
     def glutamate_init(self,
-        #first_spike_time=500.0,
-        #avg_time_btwn_spikes=10.0,
-        #avg_num_spikes=100.0,
-        #iclamp_delay=2, 
-        #iclamp_amp=0.8,
         syn_connection_weight=150.0,
-        #spike_thresh=0.0,
         init_concentration=0.8,
         spike_delay=1,
     ):
-        # initial current to glutamate neuron
-        #glutamate_current = InputCurrent(
-        #    first_spike_time=first_spike_time,
-        #    average_time_between_spikes=avg_time_btwn_spikes,
-        #    average_number_spikes=avg_num_spikes,
-        #)
-
         glutamate_soma = h.Section("glutamate_soma")
         glutamate_dendrites = h.Section("glutamate_dendrites")
         glutamate_dendrites.connect(glutamate_soma(1))
@@ -57,7 +44,7 @@ class NeuronSimulation:
             seg.hh.gkbar = 0.036  
             seg.hh.gl = 0.0003    
             seg.hh.el = -20.0
-
+        # initial current to glutamate soma
         glutamate_iclamp = h.IClamp(glutamate_soma(0.5))
         glutamate_iclamp.delay = self.glutamate_iclamp_delay
         glutamate_iclamp.dur = self.glutamate_first_spike_time
@@ -76,31 +63,15 @@ class NeuronSimulation:
         glutamate_netcon.threshold = -20.0
         glutamate_netcon.weight[0] = syn_connection_weight
         glutamate_netcon.delay = spike_delay
-        # connect current to glutamate
-        #glutamate_current_netcon = h.NetCon(glutamate_current.input_current, glutamate_syn)
-        #glutamate_current_netcon.threshold = spike_thresh
-        #glutamate_current_netcon.weight[0] = syn_connection_weight
 
         return glutamate_soma, glutamate_neuron, glutamate_syn
 
 
     def dopamine_init(
         self,
-        #first_spike_time=80.0,
-        #avg_time_btwn_spikes=18.0,
-        #avg_num_spikes=8.0,
-        #iclamp_delay=3,
-        #iclamp_amp=0.8,
         init_concentration=0.9,
-        #spike_thresh=0.0,
         syn_connection_weight=50.0,
     ):
-        #dopamine_current = InputCurrent(
-        #    first_spike_time=first_spike_time,
-        #    average_number_spikes=avg_num_spikes,
-        #    average_time_between_spikes=avg_time_btwn_spikes,
-        #)
-
         dopamine_soma = h.Section("dopamine_soma")
         dopamine_dendrites = h.Section("dopamine_dendrites")
         dopamine_dendrites.connect(dopamine_soma(1))
@@ -111,7 +82,7 @@ class NeuronSimulation:
             seg.hh.gkbar = 0.036  
             seg.hh.gl = 0.003    
             seg.hh.el = -20.0 
-
+        # initial current to dopamine soma
         dopamine_iclamp = h.IClamp(dopamine_soma(0.5))
         dopamine_iclamp.delay = self.dopamine_iclamp_delay
         dopamine_iclamp.dur = self.dopamine_first_spike_time
@@ -123,10 +94,6 @@ class NeuronSimulation:
 
         dopamine_syn = h.ExpSyn(dopamine_soma(1))
         dopamine_syn.e = self.dopamine_spike_thresh
-
-        #dopamine_current_netcon = h.NetCon(dopamine_current.input_current, dopamine_syn)
-        #dopamine_current_netcon.threshold = spike_thresh
-        #dopamine_current_netcon.weight[0] = syn_connection_weight
 
         return dopamine_soma, dopamine_neuron, dopamine_syn
 
