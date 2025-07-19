@@ -107,7 +107,7 @@ class NeuronSimulation:
         spike_delay=1,
     ):
         # medium spiny neuron in dorsal striatum with gabaergic properties
-        # have multiple receptors -> 1. glutamate (AMPA/NMDA) 2. dopamine (D2) 3. gaba (GABA-A/GABA-B)
+        # TODO: have multiple receptors -> 1. glutamate (AMPA/NMDA) 2. dopamine (D2) 3. gaba (GABA-A/GABA-B)
         msn_soma = h.Section("msn_soma")
         msn_dendrites = h.Section("msn_dendrites")
         msn_dendrites.connect(msn_soma(1))
@@ -120,11 +120,9 @@ class NeuronSimulation:
             seg.hh.el = -20.0 
         # medium spiny neuron in dorsal striatum that receives glutamate input from the cerebral cortex and dopamine from the SNc
         msn_neuron = h.GenericLigand(msn_soma(0.5))
-
         # msn synapse
         msn_syn = h.ExpSyn(msn_soma(1))
         msn_syn.e = spike_thresh
-
         # msn receptor for dopamine (need to replace with D2 receptor and NMDA for glutamate)
         msn_receptor = h.GenericReceptor(msn_soma(1))
         msn_receptor.n_ligands = num_ligands
