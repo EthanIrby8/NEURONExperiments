@@ -16,9 +16,18 @@ TOTAL_EXP_TIME = 1200
 
 
 class NeuronSimulation:
-    def __init__(self, glutamate_first_spike_time, dopamine_first_spike_time, glutamate_iclamp_amp, 
-                 dopamine_iclamp_amp, glutamate_iclamp_delay, dopamine_iclamp_delay, glutamate_spike_thresh, dopamine_spike_thresh, 
-                 dopamine_decay_rate):
+    def __init__(
+        self,
+        glutamate_first_spike_time,
+        dopamine_first_spike_time,
+        glutamate_iclamp_amp,
+        dopamine_iclamp_amp,
+        glutamate_iclamp_delay,
+        dopamine_iclamp_delay,
+        glutamate_spike_thresh,
+        dopamine_spike_thresh,
+        dopamine_decay_rate,
+    ):
         self.glutamate_first_spike_time = glutamate_first_spike_time
         self.dopamine_first_spike_time = dopamine_first_spike_time
         self.glutamate_iclamp_amp = glutamate_iclamp_amp
@@ -29,7 +38,8 @@ class NeuronSimulation:
         self.dopamine_spike_thresh = dopamine_spike_thresh
         self.dopamine_decay_rate = dopamine_decay_rate
 
-    def glutamate_init(self,
+    def glutamate_init(
+        self,
         syn_connection_weight=150.0,
         init_concentration=0.8,
         spike_delay=1,
@@ -40,18 +50,15 @@ class NeuronSimulation:
         for sec in [glutamate_soma, glutamate_dendrites]:
             sec.insert("hh")
         for seg in glutamate_soma:
-            seg.hh.gnabar = 0.12  
-            seg.hh.gkbar = 0.036  
-            seg.hh.gl = 0.0003    
+            seg.hh.gnabar = 0.12
+            seg.hh.gkbar = 0.036
+            seg.hh.gl = 0.0003
             seg.hh.el = -20.0
         # initial current to glutamate soma
         glutamate_iclamp = h.IClamp(glutamate_soma(0.5))
         glutamate_iclamp.delay = self.glutamate_iclamp_delay
         glutamate_iclamp.dur = self.glutamate_first_spike_time
         glutamate_iclamp.amp = self.glutamate_iclamp_amp
-
-        glutamate_neuron = h.GenericLigand(glutamate_soma(0.5))
-        glutamate_neuron.C_init = init_concentration
 
         glutamate_syn = h.ExpSyn(glutamate_soma(1))
         glutamate_syn.e = self.glutamate_spike_thresh
@@ -64,8 +71,7 @@ class NeuronSimulation:
         glutamate_netcon.weight[0] = syn_connection_weight
         glutamate_netcon.delay = spike_delay
 
-        return glutamate_soma, glutamate_neuron, glutamate_syn
-
+        return glutamate_soma, glutamate_syn
 
     def dopamine_init(
         self,
@@ -78,10 +84,10 @@ class NeuronSimulation:
         for sec in [dopamine_soma, dopamine_dendrites]:
             sec.insert("hh")
         for seg in dopamine_soma:
-            seg.hh.gnabar = 0.12  
-            seg.hh.gkbar = 0.036  
-            seg.hh.gl = 0.003    
-            seg.hh.el = -20.0 
+            seg.hh.gnabar = 0.12
+            seg.hh.gkbar = 0.036
+            seg.hh.gl = 0.003
+            seg.hh.el = -20.0
         # initial current to dopamine soma
         dopamine_iclamp = h.IClamp(dopamine_soma(0.5))
         dopamine_iclamp.delay = self.dopamine_iclamp_delay
@@ -97,7 +103,6 @@ class NeuronSimulation:
 
         return dopamine_soma, dopamine_neuron, dopamine_syn
 
-
     def msn_init(
         self,
         num_ligands=2,
@@ -112,23 +117,28 @@ class NeuronSimulation:
         msn_dendrites = h.Section("msn_dendrites")
         msn_dendrites.connect(msn_soma(1))
         for sec in [msn_soma, msn_dendrites]:
-            sec.insert("hh")
+            sec.insert("hh_prophos")
         for seg in msn_soma:
-            seg.hh.gnabar = 0.12  
-            seg.hh.gkbar = 0.036  
-            seg.hh.gl = 0.0003    
-            seg.hh.el = -20.0 
+            seg.hh_prophos.gnabar = 0.12
+            seg.hh_prophos.gkbar = 0.036
+            seg.hh_prophos.gl = 0.0003
+            seg.hh_prophos.el = -20.0
         # medium spiny neuron in dorsal striatum that receives glutamate input from the cerebral cortex and dopamine from the SNc
         msn_neuron = h.GenericLigand(msn_soma(0.5))
         # msn synapse
         msn_syn = h.ExpSyn(msn_soma(1))
         msn_syn.e = spike_thresh
-        # msn receptor for dopamine (need to replace with D2 receptor and NMDA for glutamate)
-        msn_receptor = h.GenericReceptor(msn_soma(1))
-        msn_receptor.n_ligands = num_ligands
-        msn_receptor.capacity = max_receptor_binding_capacity
 
-        return msn_soma, msn_neuron, msn_syn, msn_receptor
+        msn_dopamine_receptor = h.GenericReceptor(msn_soma(1))
+        msn_dopamine_receptor.n_ligands = num_ligands
+        msn_dopamine_receptor.capacity = max_receptor_binding_capacity
+
+        return (
+            msn_soma,
+            msn_neuron,
+            msn_syn,
+            msn_dopamine_receptor,
+        )
 
     def create_netcons(
         self,
@@ -138,8 +148,8 @@ class NeuronSimulation:
         msn_neuron,
         syn_connection_weight=150.0,
         spike_thresh=0.0,
-        spike_delay=1):
-
+        spike_delay=1,
+    ):
 
         # connect glutamate voltage to msn synapse
         glutamate_msn_soma_netcon = h.NetCon(
@@ -171,23 +181,30 @@ class NeuronSimulation:
         glutamate_soma,
         dopamine_soma,
         msn_soma,
-        glutamate_neuron,
         dopamine_neuron,
-        msn_neuron):
-        
+        msn_neuron,
+    ):
         t_vec = h.Vector().record(h._ref_t)
         v_glutamate = h.Vector().record(glutamate_soma(0.5)._ref_v)
         v_dopamine = h.Vector().record(dopamine_soma(0.5)._ref_v)
         v_msn = h.Vector().record(msn_soma(1)._ref_v)
-        glutamate_conc = h.Vector().record(glutamate_neuron._ref_C)
-        dopamine_conc = h.Vector().record(dopamine_neuron._ref_C) 
+        dopamine_conc = h.Vector().record(dopamine_neuron._ref_C)
         msn_conc = h.Vector().record(msn_neuron._ref_C)
+        gk_record = h.Vector().record(msn_soma(0.5).hh_prophos._ref_gk)
 
-        return msn_conc, dopamine_conc, glutamate_conc, t_vec, v_msn, v_dopamine, v_glutamate
+        return (
+            msn_conc,
+            dopamine_conc,
+            t_vec,
+            v_msn,
+            v_dopamine,
+            v_glutamate,
+            gk_record,
+        )
 
     def run_simulation(self):
         # Create single glutamate, dopamine, and medium spiny neurons
-        glu_soma, glu_neuron, glu_syn = self.glutamate_init(
+        glu_soma, glu_syn = self.glutamate_init(
             syn_connection_weight=150.0,
             init_concentration=0.8,
             spike_delay=1,
@@ -198,8 +215,8 @@ class NeuronSimulation:
             syn_connection_weight=50.0,
         )
 
-        msn_soma, msn_neuron, msn_syn, msn_receptor = self.msn_init(
-            num_ligands=2,
+        msn_soma, msn_neuron, msn_syn, msn_dop_receptor = self.msn_init(
+            num_ligands=1,
             max_receptor_binding_capacity=1.0,
             spike_thresh=-33.0,
             syn_connection_weight=1.0,
@@ -207,8 +224,12 @@ class NeuronSimulation:
         )
 
         # set the ligand concentration to each unoccupied ligand binding site of the MSN receptor
-        h.setpointer(glu_neuron._ref_C, "C_lig1", msn_receptor)
-        h.setpointer(dop_neuron._ref_C, "C_lig2", msn_receptor)
+        h.setpointer(dop_neuron._ref_C, "C_lig1", msn_dop_receptor)
+        h.setpointer(
+            msn_dop_receptor._ref_activation,
+            "receptor_activation",
+            msn_soma(0.5).hh_prophos,
+        )
 
         self.create_netcons(
             glu_soma,
@@ -220,29 +241,51 @@ class NeuronSimulation:
             spike_delay=1,
         )
 
-        (msn_concentration,
-        dopamine_concentration,
-        glutamate_concentration,
-        time_vector,
-        voltage_msn,
-        dopamine_volt,
-        glutamate_v) = self.record_network_data(
-        glu_soma, dop_soma, msn_soma, glu_neuron, dop_neuron, msn_neuron)
-   
+        (
+            msn_concentration,
+            dopamine_concentration,
+            time_vector,
+            voltage_msn,
+            dopamine_volt,
+            glutamate_v,
+            gk_record,
+        ) = self.record_network_data(
+            glu_soma, dop_soma, msn_soma, dop_neuron, msn_neuron
+        )
+
         h.finitialize(RESTING_MEMBRANE_POTENTIAL)
         h.continuerun(TOTAL_EXP_TIME)
         logger.info("Ran simulation")
-        return dopamine_concentration, time_vector
+        return dopamine_concentration, time_vector, gk_record, voltage_msn
 
 
-sim = NeuronSimulation(glutamate_first_spike_time=500.0, dopamine_first_spike_time=600.0, glutamate_iclamp_amp=0.8, 
-                       dopamine_iclamp_amp=0.4, glutamate_iclamp_delay=8, dopamine_iclamp_delay=4, 
-                       glutamate_spike_thresh=-33.0, dopamine_spike_thresh=-33.0, dopamine_decay_rate=0.004)
-'''
+sim = NeuronSimulation(
+    glutamate_first_spike_time=500.0,
+    dopamine_first_spike_time=600.0,
+    glutamate_iclamp_amp=0.8,
+    dopamine_iclamp_amp=0.4,
+    glutamate_iclamp_delay=8,
+    dopamine_iclamp_delay=4,
+    glutamate_spike_thresh=-33.0,
+    dopamine_spike_thresh=-33.0,
+    dopamine_decay_rate=0.004,
+)
+"""
+dopamine_concentration, time_vector, gk_record, voltage_msn = sim.run_simulation()
+
 plt.figure(figsize=(12, 6))
 plt.plot(time_vector, voltage_msn, label="V")
 plt.xlabel("Time (ms)")
 plt.ylabel("Voltage (mV)")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+plt.figure(figsize=(12, 6))
+plt.plot(time_vector, gk_record, label="gK")
+plt.xlabel("Time (ms)")
+plt.ylabel("gK (S/cm^2)")
 plt.legend()
 plt.grid(True)
 plt.tight_layout()
@@ -260,4 +303,4 @@ plt.legend()
 plt.grid(True)
 plt.tight_layout()
 plt.show()
-'''
+"""
