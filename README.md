@@ -4,7 +4,7 @@
 
 ### The goal of these experiments is to simulate the dynamics of the Basal Ganglia and its dysfunction in the context of Parkinson's Disease.
 
-![DA Concentration](./plots/da_conc_striatum.png)
+![DA Concentration](./plots/MSN_subplots.png)
 
 #### utils.py contains helper methods and classes interpolated from Yale's NEURON Python library https://nrn.readthedocs.io/en/8.0.1/python/programming/neuronpython.html 
 

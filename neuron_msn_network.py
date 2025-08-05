@@ -124,7 +124,7 @@ class NeuronSimulation:
             seg.hh_prophos.gl = 0.0003
             seg.hh_prophos.el = -20.0
         # medium spiny neuron in dorsal striatum that receives glutamate input from the cerebral cortex and dopamine from the SNc
-        msn_neuron = h.GenericLigand(msn_soma(0.5))
+        msn_neuron = h.GenericLigand(msn_soma(1))
         # msn synapse
         msn_syn = h.ExpSyn(msn_soma(1))
         msn_syn.e = spike_thresh
@@ -183,6 +183,7 @@ class NeuronSimulation:
         msn_soma,
         dopamine_neuron,
         msn_neuron,
+        msn_dopamine_receptor,
     ):
         t_vec = h.Vector().record(h._ref_t)
         v_glutamate = h.Vector().record(glutamate_soma(0.5)._ref_v)
@@ -190,6 +191,9 @@ class NeuronSimulation:
         v_msn = h.Vector().record(msn_soma(1)._ref_v)
         dopamine_conc = h.Vector().record(dopamine_neuron._ref_C)
         msn_conc = h.Vector().record(msn_neuron._ref_C)
+        msn_dopamine_receptor_activation = h.Vector().record(
+            msn_dopamine_receptor._ref_activation
+        )
         gk_record = h.Vector().record(msn_soma(0.5).hh_prophos._ref_gk)
 
         return (
@@ -200,6 +204,7 @@ class NeuronSimulation:
             v_dopamine,
             v_glutamate,
             gk_record,
+            msn_dopamine_receptor_activation,
         )
 
     def run_simulation(self):
@@ -249,14 +254,22 @@ class NeuronSimulation:
             dopamine_volt,
             glutamate_v,
             gk_record,
+            msn_dopamine_receptor_activation,
         ) = self.record_network_data(
-            glu_soma, dop_soma, msn_soma, dop_neuron, msn_neuron
+            glu_soma, dop_soma, msn_soma, dop_neuron, msn_neuron, msn_dop_receptor
         )
 
         h.finitialize(RESTING_MEMBRANE_POTENTIAL)
         h.continuerun(TOTAL_EXP_TIME)
         logger.info("Ran simulation")
-        return dopamine_concentration, time_vector, gk_record, voltage_msn
+
+        return (
+            dopamine_concentration,
+            msn_dopamine_receptor_activation,
+            time_vector,
+            gk_record,
+            voltage_msn,
+        )
 
 
 sim = NeuronSimulation(
@@ -271,36 +284,51 @@ sim = NeuronSimulation(
     dopamine_decay_rate=0.004,
 )
 """
-dopamine_concentration, time_vector, gk_record, voltage_msn = sim.run_simulation()
+(
+    dopamine_concentration,
+    msn_dopamine_receptor_activation,
+    time_vector,
+    gk_record,
+    voltage_msn,
+) = sim.run_simulation()
 
-plt.figure(figsize=(12, 6))
-plt.plot(time_vector, voltage_msn, label="V")
+plt.figure(figsize=(22, 16))
+
+plt.subplot(7, 1, 1)
+plt.plot(time_vector, voltage_msn, label="Medium Spiny Neuron (MSN) Voltage")
 plt.xlabel("Time (ms)")
 plt.ylabel("Voltage (mV)")
 plt.legend()
 plt.grid(True)
-plt.tight_layout()
-plt.show()
 
-plt.figure(figsize=(12, 6))
-plt.plot(time_vector, gk_record, label="gK")
+plt.subplot(7, 1, 2)
+plt.plot(
+    time_vector,
+    msn_dopamine_receptor_activation,
+    label="MSN Dopamine Rceptor Activation",
+)
+plt.xlabel("Time (ms)")
+plt.ylabel("Receptor Activation")
+plt.legend()
+plt.grid(True)
+
+plt.subplot(7, 1, 3)
+plt.plot(time_vector, gk_record, label="MSN Potassium Conductance (gK)")
 plt.xlabel("Time (ms)")
 plt.ylabel("gK (S/cm^2)")
 plt.legend()
 plt.grid(True)
-plt.tight_layout()
-plt.show()
 
-plt.figure(figsize=(12, 6))
+plt.subplot(7, 1, 4)
 plt.plot(
     time_vector,
     dopamine_concentration,
-    label="Dopamine concentration in the Dorsal Striatum",
+    label="Dopamine concentration in Dorsal Striatum",
 )
 plt.xlabel("Time (ms)")
 plt.ylabel("Concentration (uM)")
 plt.legend()
 plt.grid(True)
-plt.tight_layout()
+
 plt.show()
 """
