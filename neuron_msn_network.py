@@ -18,8 +18,8 @@ TOTAL_EXP_TIME = 1200
 class NeuronSimulation:
     def __init__(
         self,
-        glutamate_first_spike_time,
-        dopamine_first_spike_time,
+        glutamate_spike_duration,
+        dopamine_spike_duration,
         glutamate_iclamp_amp,
         dopamine_iclamp_amp,
         glutamate_iclamp_delay,
@@ -28,8 +28,8 @@ class NeuronSimulation:
         dopamine_spike_thresh,
         dopamine_decay_rate,
     ):
-        self.glutamate_first_spike_time = glutamate_first_spike_time
-        self.dopamine_first_spike_time = dopamine_first_spike_time
+        self.glutamate_spike_duration = glutamate_spike_duration
+        self.dopamine_spike_duration = dopamine_spike_duration
         self.glutamate_iclamp_amp = glutamate_iclamp_amp
         self.dopamine_iclamp_amp = dopamine_iclamp_amp
         self.glutamate_iclamp_delay = glutamate_iclamp_delay
@@ -43,6 +43,7 @@ class NeuronSimulation:
         syn_connection_weight=150.0,
         init_concentration=0.8,
         spike_delay=1,
+        hh_gkbar=0.036,
     ):
         glutamate_soma = h.Section("glutamate_soma")
         glutamate_dendrites = h.Section("glutamate_dendrites")
@@ -51,18 +52,18 @@ class NeuronSimulation:
             sec.insert("hh")
         for seg in glutamate_soma:
             seg.hh.gnabar = 0.12
-            seg.hh.gkbar = 0.036
+            seg.hh.gkbar = hh_gkbar
             seg.hh.gl = 0.0003
             seg.hh.el = -20.0
         # initial current to glutamate soma
         glutamate_iclamp = h.IClamp(glutamate_soma(0.5))
         glutamate_iclamp.delay = self.glutamate_iclamp_delay
-        glutamate_iclamp.dur = self.glutamate_first_spike_time
+        glutamate_iclamp.dur = self.glutamate_spike_duration
         glutamate_iclamp.amp = self.glutamate_iclamp_amp
 
         glutamate_syn = h.ExpSyn(glutamate_soma(1))
         glutamate_syn.e = self.glutamate_spike_thresh
-        glutamate_syn.tau = 0.01
+        glutamate_syn.tau = 1.0
 
         glutamate_netcon = h.NetCon(
             glutamate_soma(1)._ref_v, glutamate_syn, sec=glutamate_soma
@@ -77,6 +78,7 @@ class NeuronSimulation:
         self,
         init_concentration=0.9,
         syn_connection_weight=50.0,
+        hh_gkbar=0.036,
     ):
         dopamine_soma = h.Section("dopamine_soma")
         dopamine_dendrites = h.Section("dopamine_dendrites")
@@ -85,13 +87,13 @@ class NeuronSimulation:
             sec.insert("hh")
         for seg in dopamine_soma:
             seg.hh.gnabar = 0.12
-            seg.hh.gkbar = 0.036
+            seg.hh.gkbar = hh_gkbar
             seg.hh.gl = 0.003
             seg.hh.el = -20.0
         # initial current to dopamine soma
         dopamine_iclamp = h.IClamp(dopamine_soma(0.5))
         dopamine_iclamp.delay = self.dopamine_iclamp_delay
-        dopamine_iclamp.dur = self.dopamine_first_spike_time
+        dopamine_iclamp.dur = self.dopamine_spike_duration
         dopamine_iclamp.amp = self.dopamine_iclamp_amp
         # TODO: add mod file for d2 receptor. model dopamine concentration with more dynamics
         dopamine_neuron = h.GenericLigand(dopamine_soma(0.5))
@@ -100,6 +102,7 @@ class NeuronSimulation:
 
         dopamine_syn = h.ExpSyn(dopamine_soma(1))
         dopamine_syn.e = self.dopamine_spike_thresh
+        dopamine_syn.tau = 1.0
 
         return dopamine_soma, dopamine_neuron, dopamine_syn
 
@@ -110,6 +113,7 @@ class NeuronSimulation:
         spike_thresh=0.0,
         syn_connection_weight=150.0,
         spike_delay=1,
+        hh_gkbar=0.036,
     ):
         # medium spiny neuron in dorsal striatum with gabaergic properties
         # TODO: have multiple receptors -> 1. glutamate (AMPA/NMDA) 2. dopamine (D2) 3. gaba (GABA-A/GABA-B)
@@ -120,7 +124,7 @@ class NeuronSimulation:
             sec.insert("hh_prophos")
         for seg in msn_soma:
             seg.hh_prophos.gnabar = 0.12
-            seg.hh_prophos.gkbar = 0.036
+            seg.hh_prophos.gkbar = hh_gkbar
             seg.hh_prophos.gl = 0.0003
             seg.hh_prophos.el = -20.0
         # medium spiny neuron in dorsal striatum that receives glutamate input from the cerebral cortex and dopamine from the SNc
@@ -128,6 +132,7 @@ class NeuronSimulation:
         # msn synapse
         msn_syn = h.ExpSyn(msn_soma(1))
         msn_syn.e = spike_thresh
+        msn_syn.tau = 1.0
 
         msn_dopamine_receptor = h.GenericReceptor(msn_soma(1))
         msn_dopamine_receptor.n_ligands = num_ligands
@@ -139,6 +144,39 @@ class NeuronSimulation:
             msn_syn,
             msn_dopamine_receptor,
         )
+
+    def gpe_gaba_init(
+        self,
+        n_ligands=1,
+        max_receptor_binding_capacity=1.0,
+        spike_thresh=-70.0,
+        syn_connection_weight=150.0,
+        spike_delay=1,
+        gaba_synapse_decay_rate=0.004,
+    ):
+        """Receive GABAergic input from MSNs in the Dorsal Striatum and output GABAergic projections to STN"""
+        gaba_soma = h.Section("gaba_soma")
+        gaba_dendrites = h.Section("gaba_dendrites")
+        gaba_dendrites.connect(gaba_soma(1))
+        for sec in [gaba_soma, gaba_dendrites]:
+            sec.insert("hh_prophos")
+        for seg in [gaba_soma, gaba_dendrites]:
+            seg.hh_prophos.gnabar = 0.12
+            seg.hh_prophos.gkbar = 0.036
+            seg.hh_prophos.gl = 0.0003
+            seg.hh_prophos.el = spike_thresh
+
+        gaba_neuron = h.GenericLigand(gaba_soma(1))
+
+        gaba_synapse = h.ExpSyn(gaba_soma(1))
+        gaba_synapse.e = spike_thresh
+        gaba_synapse.tau = gaba_synapse_decay_rate
+
+        gpe_gaba_receptor = h.GenericReceptor(gaba_soma(1))
+        gpe_gaba_receptor.n_ligands = n_ligands
+        gpe_gaba_receptor.capacity = max_receptor_binding_capacity
+
+        return gaba_soma, gaba_neuron, gaba_synapse, gpe_gaba_receptor
 
     def create_netcons(
         self,
@@ -213,11 +251,13 @@ class NeuronSimulation:
             syn_connection_weight=150.0,
             init_concentration=0.8,
             spike_delay=1,
+            hh_gkbar=0.0036,
         )
 
         dop_soma, dop_neuron, dop_syn = self.dopamine_init(
             init_concentration=0.9,
             syn_connection_weight=50.0,
+            hh_gkbar=0.0036,
         )
 
         msn_soma, msn_neuron, msn_syn, msn_dop_receptor = self.msn_init(
@@ -225,7 +265,8 @@ class NeuronSimulation:
             max_receptor_binding_capacity=1.0,
             spike_thresh=-33.0,
             syn_connection_weight=1.0,
-            spike_delay=1,
+            spike_delay=4,
+            hh_gkbar=0.0022,
         )
 
         # set the ligand concentration to each unoccupied ligand binding site of the MSN receptor
@@ -273,8 +314,8 @@ class NeuronSimulation:
 
 
 sim = NeuronSimulation(
-    glutamate_first_spike_time=500.0,
-    dopamine_first_spike_time=600.0,
+    glutamate_spike_duration=500.0,
+    dopamine_spike_duration=600.0,
     glutamate_iclamp_amp=0.8,
     dopamine_iclamp_amp=0.4,
     glutamate_iclamp_delay=8,
